@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Sentry226</string>
+    <string name="enter_first_number">Enter first number</string>
+    <string name="enter_second_number">Enter second number</string>
+    <string name="Divide">/</string>
+    <string name="Multiply">*</string>
+    <string name="Subtract">-</string>
+    <string name="Add">+</string>
+    <string name="result_will_be_shown_here">Result will be shown here</string>
+    <string name="result">Result: %1$s</string>
+    <string name="test_mode">Test Mode</string>
+    <string name="field_mode">Field Mode</string>
+    <string name="search">Search</string>
+    <string name="connect">Connect</string>
+</resources>
