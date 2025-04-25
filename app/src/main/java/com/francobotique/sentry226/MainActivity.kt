@@ -61,8 +61,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             return
         }
 
-        //val repository = BleDiscoveryRepo(bluetoothManager.adapter.bluetoothLeScanner) as DiscoveryRepo
-        val repository = MockDiscoveryRepo()
+        val repository = BleDiscoveryRepo(bluetoothManager.adapter.bluetoothLeScanner) as DiscoveryRepo
+        //val repository = MockDiscoveryRepo()
         val factory = MainViewModelFactory(repository)
         viewModel = ViewModelProvider(this, factory)[MainViewModel::class.java]
 

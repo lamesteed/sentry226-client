@@ -1,5 +1,7 @@
 package com.francobotique.sentry226
 
+import android.bluetooth.BluetoothManager
+import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -11,9 +13,11 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.francobotique.sentry226.databinding.ActivityFieldModeBinding
+import com.francobotique.sentry226.repository.BleServiceRepo
 import com.francobotique.sentry226.repository.MockLocalRepo
 import com.francobotique.sentry226.repository.MockServiceRepo
 import com.francobotique.sentry226.repository.PhoneLocalRepo
+import com.francobotique.sentry226.repository.SERVICE_ID_PROBE
 import com.francobotique.sentry226.viewmodel.FieldModeModelFactory
 import com.francobotique.sentry226.viewmodel.FieldModeViewModel
 import com.google.android.gms.location.LocationServices
@@ -42,15 +46,15 @@ class FieldModeActivity : AppCompatActivity(), View.OnClickListener {
         Log.i(_tag, "Starting Activity, Received device address: $deviceAddress")
 
         // Create bluetooth device object from address
-        // val bluetoothManager: BluetoothManager = this.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
-        // val bluetoothDevice = bluetoothManager.adapter.getRemoteDevice(deviceAddress)
-        // val repository = BleServiceRepo(bluetoothDevice, SERVICE_ID_PROBE )
+        val bluetoothManager: BluetoothManager = this.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
+        val bluetoothDevice = bluetoothManager.adapter.getRemoteDevice(deviceAddress)
+        val serviceRepo = BleServiceRepo(bluetoothDevice, SERVICE_ID_PROBE )
 
         val localRepo = PhoneLocalRepo(
             LocationServices.getFusedLocationProviderClient(this),
             this.contentResolver)
 
-        val serviceRepo = MockServiceRepo()
+        //val serviceRepo = MockServiceRepo()
         //val localRepo = MockLocalRepo()
         val factory = FieldModeModelFactory(serviceRepo, localRepo)
         viewModel = ViewModelProvider(this, factory)[FieldModeViewModel::class.java]
