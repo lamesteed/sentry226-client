@@ -75,8 +75,15 @@ class BleServiceRepo(private val bluetoothDevice: BluetoothDevice,
 
         override fun onMtuChanged(gatt: BluetoothGatt, newMtu: Int, status: Int) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-                Log.i(_tag, "MTU changed to $newMtu bytes.")
-                mtu = newMtu
+                // if MTU > 512, set to 512, otherwise set to newMtu
+                mtu = if (newMtu > MAX_MTU) {
+                    Log.i(_tag, "MTU is greater than 512, setting to 512.")
+                    MAX_MTU
+                } else {
+                    Log.i(_tag, "MTU changed to $newMtu bytes.")
+                    newMtu
+                }
+
                 mtuLatch.countDown()
             } else {
                 Log.e(_tag, "Failed to change MTU.")
