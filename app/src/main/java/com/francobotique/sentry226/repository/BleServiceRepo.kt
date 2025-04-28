@@ -249,7 +249,12 @@ class BleServiceRepo(private val bluetoothDevice: BluetoothDevice,
             }
 
             // 3. Wait for notification with text END_OF_DATA to confirm command is accepted
-            if (!commandCompleteLatch.await(10, TimeUnit.SECONDS)) {
+            var execTimeout : Long  = 10
+            if ((command == Command.GETFILE)) {
+               execTimeout = 120
+            }
+
+            if (!commandCompleteLatch.await(execTimeout, TimeUnit.SECONDS)) {
                 throw Exception("Command timed out")
             }
 
