@@ -14,7 +14,8 @@ class MockServiceRepo : ServiceRepo {
         locationID = "TestLocationID",
         locationName = "TestLocationName",
         samplingStep = 1.0,
-        samplingIntervalMsec = 5000
+        samplingIntervalMsec = 5000,
+        samplingMaxDurationSec = 300
     )
     private var _gpsData: GpsData = GpsData(
         latitude = 48.8566,

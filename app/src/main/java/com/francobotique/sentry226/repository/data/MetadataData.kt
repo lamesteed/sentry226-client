@@ -5,5 +5,6 @@ data class MetadataData(
     val locationID: String,
     val locationName: String,
     val samplingStep: Double,
-    val samplingIntervalMsec : Int
+    val samplingIntervalMsec : Int,
+    val samplingMaxDurationSec : Int,
 )

@@ -335,6 +335,7 @@ class BleServiceRepo(private val bluetoothDevice: BluetoothDevice,
             metadataMap["LOCATION_NAME"]?:"",
             metadataMap["SAMPLING_STEP"]?.toDoubleOrNull() ?: 0.0,
             metadataMap["SAMPLING_INTERVAL_MSEC"]?.toInt() ?: 0,
+            metadataMap["SAMPLING_MAX_DURATION_SEC"]?.toInt() ?: 0
         )
         Log.i(_tag, "Metadata retrieved: $metadataData")
         return metadataData
@@ -354,6 +355,7 @@ class BleServiceRepo(private val bluetoothDevice: BluetoothDevice,
         metadatasb.append("LOCATION_NAME=${metadata.locationName}\n")
         metadatasb.append("SAMPLING_STEP=${metadata.samplingStep}\n")
         metadatasb.append("SAMPLING_INTERVAL_MSEC=${metadata.samplingIntervalMsec}\n")
+        metadatasb.append("SAMPLING_MAX_DURATION_SEC=${metadata.samplingMaxDurationSec}\n")
         metadatasb.append("GPS_LATITUDE=${gpsData.latitude}\n")
         metadatasb.append("GPS_LONGITUDE=${gpsData.longitude}\n")
         metadatasb.append("GPS_ACCURACY=${gpsData.accuracy}\n")

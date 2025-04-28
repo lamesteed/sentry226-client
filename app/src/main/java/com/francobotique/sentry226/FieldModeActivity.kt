@@ -18,6 +18,7 @@ import com.francobotique.sentry226.repository.MockLocalRepo
 import com.francobotique.sentry226.repository.MockServiceRepo
 import com.francobotique.sentry226.repository.PhoneLocalRepo
 import com.francobotique.sentry226.repository.SERVICE_ID_PROBE
+import com.francobotique.sentry226.repository.data.MetadataData
 import com.francobotique.sentry226.viewmodel.FieldModeModelFactory
 import com.francobotique.sentry226.viewmodel.FieldModeViewModel
 import com.google.android.gms.location.LocationServices
@@ -98,11 +99,20 @@ class FieldModeActivity : AppCompatActivity(), View.OnClickListener {
             }
         }
 
+        viewModel.metadata.observe(this) { metadata ->
+            binding.editTextDatasetName.setText(metadata.datasetName)
+            binding.editTextLocationName.setText(metadata.locationName)
+            binding.editTextSamplingStep.setText(metadata.samplingStep.toString())
+            binding.editTextSamplingInterval.setText(metadata.samplingIntervalMsec.toString())
+            binding.editTextSamplingMaxDuration.setText(metadata.samplingMaxDurationSec.toString())
+        }
+
         binding.buttonToggleMetadata.setOnClickListener(this)
         binding.buttonDisconnect.setOnClickListener(this)
         binding.buttonReboot.setOnClickListener(this)
         binding.buttonGetResults.setOnClickListener(this)
         binding.buttonStartSampling.setOnClickListener(this)
+        binding.buttonApplyMetadata.setOnClickListener(this)
 
         viewModel.connect()
     }
@@ -132,6 +142,19 @@ class FieldModeActivity : AppCompatActivity(), View.OnClickListener {
                 Log.i(_tag, "Start Sampling button clicked")
                 // invoke start sampling from device
                 viewModel.startSampling()
+            }
+            R.id.buttonApplyMetadata -> {
+                Log.i(_tag, "Apply Metadata button clicked")
+                // create metadata object based on edit text values and pass to viewmodel
+                val metadata = MetadataData(
+                    binding.editTextDatasetName.text.toString(),
+                    binding.editTextLocationName.text.toString(),
+                    binding.editTextLocationName.text.toString(),
+                    binding.editTextSamplingStep.text.toString().toDoubleOrNull() ?: 1.0,
+                    binding.editTextSamplingInterval.text.toString().toIntOrNull()?: 5000,
+                    binding.editTextSamplingMaxDuration.text.toString().toIntOrNull()?: 0
+                )
+                viewModel.applyMetadata( metadata )
             }
             else -> {
                 Log.w(_tag, "Unknown button clicked")

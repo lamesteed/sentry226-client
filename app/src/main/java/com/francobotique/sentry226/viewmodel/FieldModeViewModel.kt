@@ -40,6 +40,9 @@ class FieldModeViewModel(private val serviceRepo: ServiceRepo,
     private val _resultItems = MutableLiveData<List<ResultListItem>>()
     val resultItems: LiveData<List<ResultListItem>> get() = _resultItems
 
+    private val _metadata = MutableLiveData<MetadataData>()
+    val metadata: LiveData<MetadataData> get() = _metadata
+
     private val _tag = "FieldModeViewModel"
 
     init {
@@ -57,7 +60,10 @@ class FieldModeViewModel(private val serviceRepo: ServiceRepo,
         viewModelScope.launch {
             _loading.value = true
             try {
+                // Connect to the device
                 serviceRepo.connect()
+                // Fetch current device metadata
+                _metadata.value = serviceRepo.getMetadata()
                 _toastMessage.value = "Connected to device"
             } catch (e: Exception) {
                 _toastMessage.value = "Failed to connect to device: ${e.message}"
@@ -173,20 +179,14 @@ class FieldModeViewModel(private val serviceRepo: ServiceRepo,
                 // Synchronize device time
                 serviceRepo.syncTime()
 
-                // Get GPS data
-                val gpsData = localRepo.getGpsData()
-
-                // Mock metadata data
-                val metadata = MetadataData(
-                    "TEST_DATASET",
-                    "TEST_LOCATION_ID",
-                    "TEST_LOCATION_NAME",
-                    1.0,
-                    5000
-                )
-
                 // Apply metadata and GPS data to the device
-                serviceRepo.applyMetadata(metadata, gpsData)
+                // if metadata is null or empty, show a toast message and return
+                val metadata = _metadata.value
+                if ( metadata == null ) {
+                    _toastMessage.value = "Metadata is not set. Please set metadata before starting sampling."
+                    return@launch
+                }
+                serviceRepo.applyMetadata( metadata, localRepo.getGpsData() )
 
                 // Start sampling with metadata and GPS data
                 val filename = serviceRepo.startSampling()
@@ -196,6 +196,22 @@ class FieldModeViewModel(private val serviceRepo: ServiceRepo,
                 _closeActivity.value = true
             } catch (e: Exception) {
                 _toastMessage.value = "Failed to start sampling: ${e.message}"
+            } finally {
+                _loading.value = false
+            }
+        }
+    }
+
+    fun applyMetadata(metadata: MetadataData) {
+        viewModelScope.launch {
+            _loading.value = true
+            try {
+                // Apply metadata to the device
+                serviceRepo.applyMetadata(metadata, localRepo.getGpsData())
+                _metadata.value = metadata
+                _toastMessage.value = "Metadata applied successfully"
+            } catch (e: Exception) {
+                _toastMessage.value = "Failed to apply metadata: ${e.message}"
             } finally {
                 _loading.value = false
             }
