@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothProfile
 import android.util.Log
 import android.util.Base64
@@ -60,6 +61,7 @@ class BleServiceRepo(private val bluetoothDevice: BluetoothDevice,
     private var serviceDiscoveryLatch = CountDownLatch(1)
     private var characteristicWriteLatch = CountDownLatch(1)
     private var commandCompleteLatch = CountDownLatch(1)
+    private var writeDescriptorLatch = CountDownLatch(1)
 
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt, status: Int, newState: Int) {
@@ -115,12 +117,36 @@ class BleServiceRepo(private val bluetoothDevice: BluetoothDevice,
             }
         }
 
+        override fun onCharacteristicChanged(gatt:BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
+            if (characteristic == notifyCharacteristic) {
+                val value = characteristic.value
+                val valueString = String(value)
+                Log.i(_tag, "Received message (old): $valueString")
+                if (valueString == "END_OF_DATA") {
+                    Log.i(_tag, "Command completed successfully.")
+                    commandCompleteLatch.countDown()
+                } else {
+                    statusMessage.append(valueString)
+                    Log.i(_tag, "Status message appended")
+                }
+            }
+        }
+
         override fun onCharacteristicWrite(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?, status: Int) {
             if(status == BluetoothGatt.GATT_SUCCESS) {
                 Log.i(_tag, "Characteristic write successful.")
                 characteristicWriteLatch.countDown()
             } else {
                 Log.e(_tag, "Failed to write characteristic")
+            }
+        }
+
+        override fun onDescriptorWrite(gatt: BluetoothGatt, descriptor: BluetoothGattDescriptor, status: Int) {
+            if (status == BluetoothGatt.GATT_SUCCESS) {
+                Log.i(_tag, "Descriptor write successful for ${descriptor.uuid}")
+                writeDescriptorLatch.countDown()
+            } else {
+                Log.e(_tag, "Descriptor write failed with status $status")
             }
         }
     }
@@ -158,10 +184,30 @@ class BleServiceRepo(private val bluetoothDevice: BluetoothDevice,
                     throw Exception("Service not found")
                 }
 
+                // Request high priority connection
+                bluetoothGatt?.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH)
+                delay(100) // Short delay after changing priority
+
+                Log.i(_tag, "Service found, subscribing to notifications")
+
                 notifyCharacteristic = service.getCharacteristic(UUID.fromString(CHAR_NOTIFY_UUID))
                     ?: throw Exception("Characteristic not found")
                 bluetoothGatt?.setCharacteristicNotification(notifyCharacteristic, true)
-                Log.i(_tag, "Subscribed to characteristic updates.")
+
+                // Write the CLIENT_CHARACTERISTIC_CONFIG descriptor
+                val descriptor = notifyCharacteristic?.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))
+                descriptor?.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+                if (descriptor == null) {
+                    throw Exception("Descriptor not found for notify characteristic")
+                }
+
+                writeDescriptorLatch = CountDownLatch(1)
+                bluetoothGatt?.writeDescriptor(descriptor)
+                if (!writeDescriptorLatch.await(5, TimeUnit.SECONDS)) {
+                    throw Exception("Write descriptor timed out")
+                }
+
+                Log.i(_tag, "Subscribed to characteristic updates and descriptor written.")
                 statusMessage.setLength(0) // Clear the status message
 
                 // Step 5: Preserve tx command and tx args characteristics
